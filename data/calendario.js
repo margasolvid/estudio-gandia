@@ -65,6 +65,20 @@ function practiceTasks(){
   return out;
 }
 
+/* ---------- curva del olvido: utilidades ---------- */
+function arts0(){ return articleTasks(); }
+function temaOfTask(t){
+  if(t.kind!=="art"||!LAWS[t.law]) return null;
+  if(LAWS[t.law].apuntes) return String(+t.law.slice(1));
+  if(t.law==="lpac"){ const n=parseInt(t.art,10); return n===16?"11":(n>=34&&n<=52?"5":"4"); }
+  return String((LAWS[t.law].temas||[])[0]||"");
+}
+function failRates(){
+  const A=Store.data.answers||{}, r={}, n={};
+  for(const q of QS){ const a=A[q.id]; if(!a) continue; const k=String(q.tema); n[k]=(n[k]||0)+1; if(!a.ok) r[k]=(r[k]||0)+1; }
+  const out={}; for(const k in n) out[k]=(r[k]||0)/n[k]; return out;
+}
+
 /* ---------- reparto en días ---------- */
 function build(){
   const p=plan();
@@ -84,8 +98,30 @@ function build(){
   const n1=Math.max(1,Math.round(base.length*0.55));
   const p1=base.slice(0,n1), p2=base.slice(n1);
   p1.forEach(x=>x.phase=1); p2.forEach(x=>x.phase=2); p3.forEach(x=>x.phase=3); last.phase=4;
-  const fill=(daysArr,queue)=>{ for(const day of daysArr){ while(queue.length){ const t=queue[0];
-        if(day.used && day.used+t.min>day.cap+5) break; day.tasks.push(queue.shift()); day.used+=t.min; } } };
+  // curva del olvido: un tema cuenta como «estudiado» al tener 3 tareas programadas (o todas, si tiene menos);
+  // desde que haya 3 temas estudiados en semanas anteriores, cada semana se repasan 2 de ellos por turno
+  const tcount={}; arts0().forEach(t=>{ const k=temaOfTask(t); if(k) tcount[k]=(tcount[k]||0)+1; });
+  const seenN={}, studied={}, lastRev={}, failR=failRates();
+  const weekKey=d=>iso(addDays(d,-dow(d)));
+  let revWeek=null;
+  const review=day=>{
+    if(day.phase===4) return; const wk=weekKey(day.d); if(revWeek===wk) return; revWeek=wk;
+    const prev=Object.keys(studied).filter(k=>studied[k]<wk);
+    if(prev.length<3) return;
+    prev.sort((a,b)=>((lastRev[a]||"")<(lastRev[b]||"")?-1:(lastRev[a]||"")>(lastRev[b]||"")?1:(failR[b]||0)-(failR[a]||0)||studied[a].localeCompare(studied[b])));
+    const two=prev.slice(0,2).map(Number).sort((a,b)=>a-b); two.forEach(k=>lastRev[k]=day.date);
+    const m=Math.min(60,day.cap);
+    day.tasks.push({id:`rev:${wk}`, kind:"rev", temas:two, min:m, label:`🧠 Curva del olvido: repaso del Tema ${two[0]} y del Tema ${two[1]}`,
+      sub:`Llevas ${prev.length} temas estudiados. Relee sus notas 💡 y apuntes y haz unas 20 preguntas de cada uno, empezando por las falladas`});
+    day.used+=m;
+  };
+  const mark=(day,t)=>{ const k=temaOfTask(t); if(!k) return; seenN[k]=(seenN[k]||0)+1; if(!studied[k]&&seenN[k]>=Math.min(3,tcount[k]||3)) studied[k]=weekKey(day.d); };
+  // píldora diaria (15 min) desde el segundo día de estudio: lo que llevas peor según tus respuestas
+  let nPil=0;
+  const pill=day=>{ if(day.phase===4||nPil++<1) return; const m=Math.min(15,day.cap);
+    day.tasks.push({id:`pil:${day.date}`, kind:"pill", min:m, label:"💊 Píldora de repaso: lo que llevas peor", sub:"Abre las Píldoras y repite los fallos de la primera que te salga"}); day.used+=m; };
+  const fill=(daysArr,queue)=>{ for(const day of daysArr){ review(day); pill(day); while(queue.length){ const t=queue[0];
+        if(day.used && day.used+t.min>day.cap+5) break; day.tasks.push(queue.shift()); day.used+=t.min; mark(day,t); } } };
   const arts=articleTasks().filter(t=>!doneBefore(t.id));
   const prac=practiceTasks().filter(t=>!doneBefore(t.id));
   const q1=[...arts];
@@ -95,7 +131,7 @@ function build(){
   const q2=[...leftA,...prac];
   fill(p2,q2);
   // fase 3: repaso de fallos y notas de prioridad A (tareas fechadas)
-  for(const day of p3){ let i=0; while(day.used<day.cap){ const m=Math.min(60,day.cap-day.used); const k=i%2;
+  for(const day of p3){ review(day); pill(day); let i=0; while(day.used<day.cap){ const m=Math.min(60,day.cap-day.used); const k=i%2;
       day.tasks.push(k===0
         ? {id:`rep:${day.date}:${i}`, kind:"fail", min:m, label:"Repaso de preguntas falladas", sub:"Banco «Todos», estado «Falladas»: hasta acertarlas"}
         : {id:`not:${day.date}:${i}`, kind:"notes", min:m, label:"Notas 💡 de los artículos de prioridad A y novedades legales", sub:"Ranking de Gandia y botón 🆕 Novedades"});
@@ -116,6 +152,8 @@ function taskHTML(t,p){
     : t.kind==="sim" ? `<button class="btn" data-cal-bank="${t.bank}">Abrir</button>`
     : t.kind==="exam" ? `<button class="btn" data-cal-exam="${esc(t.ex)}">Abrir</button>`
     : t.kind==="fail" ? `<button class="btn" data-cal-fail="1">Abrir</button>`
+    : t.kind==="pill" ? `<button class="btn" data-cal-pill="1">Abrir</button>`
+    : t.kind==="rev" ? t.temas.map(k=>`<button class="btn" data-cal-rev="${k}" title="Preguntas de este tema, en orden aleatorio">Tema ${k}</button><button class="btn" data-cal-revf="${k}" title="Sólo las falladas de este tema">Fallos T${k}</button>`).join("")
     : t.kind==="sup" ? `<button class="btn" data-cal-sup="1">Abrir</button>`
     : t.kind==="tipo" ? `<button class="btn" data-cal-tipo="1">Abrir</button>`
     : `<button class="btn" data-cal-notes="1">Ranking</button>`;
@@ -135,7 +173,7 @@ function render(){
     <label>Día del examen <input type="date" id="calExam" value="${esc(p.exam)}"></label></div>
     <div class="cfg">Horas por día: ${DOW.map((n,i)=>`<label class="hd">${n}<input type="number" min="0" max="16" step="0.5" data-cal-h="${i}" value="${p.hours[i]}"></label>`).join("")}</div>
     <div class="cfg"><button class="btn primary" id="calSave">Guardar y generar</button><button class="btn" id="calReplan" title="Empieza el plan hoy con lo que te queda; lo ya hecho no se repite">Replanificar desde hoy</button><button class="btn" id="calPrint">🖨 Imprimir o guardar en PDF</button></div>
-    <div class="cs">El calendario reparte primero los artículos del ranking (A, luego B, luego C) con los apuntes de los temas prácticos intercalados; después el simulacro, los exámenes reales (primero los de subalterno), los supuestos prácticos y los exámenes tipo Gandia; y deja los últimos días para repasar fallos y notas. Marca cada tarea al terminarla. Si te retrasas, pulsa «Replanificar desde hoy».</div></details>`;
+    <div class="cs">El calendario reparte primero los artículos del ranking (A, luego B, luego C) con los apuntes de los temas prácticos intercalados; después el simulacro, los exámenes reales (primero los de subalterno), los supuestos prácticos y los exámenes tipo Gandia; y deja los últimos días para repasar fallos y notas. 💊 Cada día de estudio incluye una píldora de 15 minutos con lo que llevas peor. 🧠 Curva del olvido: en cuanto llevas 3 temas estudiados, cada semana empieza con el repaso de 2 temas anteriores, por turnos (primero los que hace más tiempo que no repasas y los que más fallas). Marca cada tarea al terminarla. Si te retrasas, pulsa «Replanificar desde hoy».</div></details>`;
   if(R.error){ box.innerHTML=`<div class="rank cal"><h3>📅 Calendario de estudio</h3>${form}<p class="empty">${esc(R.error)}</p></div>`; box.scrollTop=0; return; }
   const left=Math.round((R.exam-parse(todayIso()))/864e5), pct=R.total?Math.round(100*R.done/R.total):0;
   const tot=R.days.reduce((s,d)=>s+d.cap,0);
@@ -189,6 +227,8 @@ $("#center").addEventListener("click",e=>{
   if(b=g("cal-exam")){ $("#fbank").value="real"; $("#fexam").value=b.dataset.calExam; $("#fstat").value="all"; $("#fart").checked=false; $("#ftopic").value="all"; $("#ford").value="seq"; buildQueue(); return showTab("q"); }
   if(b=g("cal-fail")){ $("#fbank").value="all"; $("#fstat").value="fail"; $("#fart").checked=false; $("#ftopic").value="all"; $("#fexam").value="all"; buildQueue(); return showTab("q"); }
   if(b=g("cal-notes")){ return showRanking(); }
+  if(b=g("cal-pill")){ return window.showPildoras(); }
+  if(b=g("cal-rev")||g("cal-revf")){ const k=b.dataset.calRev||b.dataset.calRevf; $("#fbank").value="all"; $("#ftopic").value=window.TEMAS[k]; $("#fstat").value=b.dataset.calRevf?"fail":"all"; $("#fart").checked=false; $("#fexam").value="all"; $("#fsrc").value="all"; $("#ford").value="rnd"; buildQueue(); return showTab("q"); }
   if(b=g("cal-sup")){ return $("#bSup").click(); }
   if(b=g("cal-tipo")){ return $("#bExam").click(); }
 });

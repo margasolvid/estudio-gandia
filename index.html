@@ -98,6 +98,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 .sup details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:var(--panel)}
 .sup summary{cursor:pointer;font-weight:650}
 .sup .sol li{margin-bottom:6px}
+.pill{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel)}
+.pill .ph{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.pill .bar{max-width:220px}
+.b.pil{color:#a3221a;background:#fbe4e2}
 .grpl{font-size:12px;font-weight:650;color:var(--muted);white-space:nowrap}
 /* centro */
 .searchrow{display:flex;gap:8px;align-items:center}
@@ -199,6 +203,7 @@ mark{background:#ffe066;color:#000;border-radius:2px}
   <button class="iconbtn hdr" id="bSim" title="Preguntas nuevas redactadas por Claude sobre los 16 temas, con su porqué">🔥 Simulacro (<span id="nSim"></span>)</button>
   <button class="iconbtn hdr" id="bReal" title="Preguntas de exámenes reales de subalterno, conserje y de la Comunitat">📝 Exámenes reales (<span id="nReal"></span>)</button>
   <button class="iconbtn hdr" id="bExam" title="Primer ejercicio como el de Gandia: 40 preguntas, 57 minutos, cada fallo resta 1/4">⏱ Examen tipo Gandia</button>
+  <button class="iconbtn hdr" id="bPil" title="Píldoras de repaso: lo que llevas peor según tus respuestas">💊 Píldoras (<span id="nPil">0</span>)</button>
   <button class="iconbtn hdr" id="bSup" title="Segundo ejercicio: supuestos prácticos con solución modelo">🧩 Supuestos prácticos</button>
   <button class="iconbtn hdr" id="bNov" title="Artículos modificados recientemente">🆕 Novedades legales</button>
   <span class="sp"></span>
@@ -344,7 +349,7 @@ function renderTree(){
     const first=(n.plain[0]||"").slice(0,90);
     if(f){ const num=f.replace(/^art(iculo)?\.?\s*/,""); if(!(norm(n.id)===num || norm(n.t).includes(f) || norm(n.plain.join(" ")).includes(f))) continue; }
     const nq=(QBYART[S.law+"|"+n.id]||[]).length;
-    out.push(`<div class="a${S.art===n.id?" sel":""}${n.tm?"":" out"}" data-id="${esc(n.id)}"><span class="n">${esc(ap?n.id:n.t.replace(/^Artículo/,"Art.").replace(/^(Art\. [\w ]+?\.).*$/,"$1"))}</span><span class="s">${esc(ap?n.t.replace(/^[\d.]+\.\s*/,""):first)}</span>${n.mod&&n.mod>="20230101"?'<span class="b mod" title="Modificado el '+fdate(n.mod)+'">🆕</span>':""}${n.top?'<span class="b top" title="Prioridad máxima">A</span>':""}${n.ex?`<span class="b ex" title="Exámenes reales en que ha salido">${n.ex}</span>`:""}${nq?`<span class="b q" title="Preguntas en el banco">${nq}P</span>`:""}</div>`);
+    out.push(`<div class="a${S.art===n.id?" sel":""}${n.tm?"":" out"}" data-id="${esc(n.id)}"><span class="n">${esc(ap?n.id:n.t.replace(/^Artículo/,"Art.").replace(/^(Art\. [\w ]+?\.).*$/,"$1"))}</span><span class="s">${esc(ap?n.t.replace(/^[\d.]+\.\s*/,""):first)}</span>${n.mod&&n.mod>="20230101"?'<span class="b mod" title="Modificado el '+fdate(n.mod)+'">🆕</span>':""}${weak().set.has(S.law+"|"+n.id)?'<span class="b pil" title="Lo llevas mal: píldora de repaso">💊</span>':""}${n.top?'<span class="b top" title="Prioridad máxima">A</span>':""}${n.ex?`<span class="b ex" title="Exámenes reales en que ha salido">${n.ex}</span>`:""}${nq?`<span class="b q" title="Preguntas en el banco">${nq}P</span>`:""}</div>`);
   }
   $("#tree").innerHTML=out.join("")||`<div class="empty">Nada coincide con el filtro.</div>`;
 }
@@ -382,7 +387,7 @@ function openArt(law,id,opts={}){
   $("#center").innerHTML=`<div class="article ${marksClass()}">
     <div class="crumb">${esc(LAWS[law].short)}${a.path.length?" · "+esc(a.path.join(" · ")):""}</div>
     <h3>${esc(a.t)}</h3>
-    <div class="meta">${a.top?'<span class="b top">Prioridad A</span>':""}${a.mod?`<span class="b mod">${a.mod>="20230101"?"🆕 ":""}Redacción vigente desde ${fdate(a.mod)}</span>`:""}${!a.tm&&!ap?'<span class="b" style="background:var(--soft);color:var(--muted)">Fuera del temario de Gandia (sólo consulta)</span>':""}${a.ex?`<span class="b ex">Ha salido en ${a.ex} examen${a.ex>1?"es":""} real${a.ex>1?"es":""}</span>`:""}${nq?`<span class="b q">${nq} pregunta${nq>1?"s":""} en el banco</span>`:""}</div>
+    <div class="meta">${weak().set.has(law+"|"+id)?'<span class="b pil">💊 Píldora de repaso: lo llevas mal</span>':""}${a.top?'<span class="b top">Prioridad A</span>':""}${a.mod?`<span class="b mod">${a.mod>="20230101"?"🆕 ":""}Redacción vigente desde ${fdate(a.mod)}</span>`:""}${!a.tm&&!ap?'<span class="b" style="background:var(--soft);color:var(--muted)">Fuera del temario de Gandia (sólo consulta)</span>':""}${a.ex?`<span class="b ex">Ha salido en ${a.ex} examen${a.ex>1?"es":""} real${a.ex>1?"es":""}</span>`:""}${nq?`<span class="b q">${nq} pregunta${nq>1?"s":""} en el banco</span>`:""}</div>
     ${noteHTML(law,id)}
     ${pars||'<p class="empty">Sin contenido.</p>'}
     <div class="nav">
@@ -495,7 +500,7 @@ function answer(l){
   const ok=l===q.a;
   const A=Store.data.answers; const prev=A[q.id];
   A[q.id]={c:l,ok,n:(prev?prev.n:0)+1,t:Date.now()};
-  Store.save();
+  Store.save(); refreshPil();
   document.querySelectorAll("#opts .opt").forEach(b=>{ b.disabled=true; if(b.dataset.l===q.a) b.classList.add("right"); else if(b.dataset.l===l) b.classList.add("wrong"); });
   const ci=ABC.indexOf(q.a);
   $("#fb").innerHTML=`<div class="fb ${ok?"ok":"ko"}">${ok?"✔ ¡Correcto!":`✘ Fallo. La respuesta correcta es la <b>${q.a})</b> ${esc(q.o[ci])}`}</div>
@@ -531,6 +536,45 @@ document.addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
   if(["a","b","c","d","1","2","3","4"].includes(k)){ const l=isNaN(+k)?k:ABC[+k-1]; if(S.qlist.length&&ABC.indexOf(l)<S.qlist[S.qi].o.length) answer(l); }
   else if(k==="arrowright"||k==="enter"){ if(S.answered) nextQ(); }
+});
+
+/* ---------- píldoras de repaso: lo que llevas peor ---------- */
+let WEAKC=null;
+function weak(){
+  if(WEAKC) return WEAKC;
+  const A=Store.data.answers||{}, by={}, tem={};
+  for(const q of QS){ const a=A[q.id]; if(!a) continue;
+    const t=String(q.tema); tem[t]=tem[t]||{n:0,ko:0}; tem[t].n++; if(!a.ok) tem[t].ko++;
+    if(!q.law||!q.art) continue; const k=q.law+"|"+q.art; const o=by[k]=by[k]||{law:q.law,art:q.art,n:0,ko:0,t:0};
+    o.n++; if(!a.ok){ o.ko++; o.t=Math.max(o.t,a.t||0); } }
+  const arts=Object.values(by).filter(o=>o.ko>0&&o.ko/o.n>=0.3).map(o=>Object.assign(o,{acc:1-o.ko/o.n,score:o.ko*2+(o.ko/o.n)*3+(Date.now()-o.t<7*864e5?1:0)}))
+    .sort((a,b)=>b.score-a.score);
+  const temas=Object.entries(tem).filter(([k,v])=>v.n>=5).map(([k,v])=>({k,n:v.n,acc:1-v.ko/v.n})).sort((a,b)=>a.acc-b.acc);
+  WEAKC={arts, set:new Set(arts.slice(0,30).map(o=>o.law+"|"+o.art)), temas};
+  return WEAKC;
+}
+function refreshPil(){ WEAKC=null; const w=weak(); const el=$("#nPil"); if(el) el.textContent=Math.min(w.arts.length,12); }
+const RANKBY={}; for(const r of (window.RANKING||[])) RANKBY[r.law+"|"+r.art]=r;
+function showPildoras(){
+  const w=weak(); const top=w.arts.slice(0,12);
+  const pct=x=>Math.round(100*x)+"%";
+  const tem=w.temas.slice(0,4).filter(t=>t.acc<0.8).map(t=>`<span class="b pil" style="margin-right:6px">${esc(TEMAS[t.k]||t.k)} · ${pct(t.acc)} de acierto</span>`).join("");
+  $("#center").innerHTML=`<div class="rank pils"><h3>💊 Píldoras de repaso · lo que llevas peor</h3>
+  <p class="stats">Se calculan con tus respuestas: artículos y apartados en los que fallas al menos 3 de cada 10, ordenados por número de fallos, porcentaje de error y fallos recientes. Cada píldora dura 10-15 minutos: relee lo que hay que clavar y la nota 💡, abre el artículo y repite sólo sus preguntas falladas hasta acertarlas. En el índice van marcados con 💊 y desaparecen cuando los dominas.</p>
+  ${tem?`<p><b>Temas más flojos:</b> ${tem}</p>`:""}
+  ${top.length?top.map((o,i)=>{ const a=artOf(o.law,o.art); const r=RANKBY[o.law+"|"+o.art]; const cl=r&&r.cl?r.cl:(a&&a.plain[0]||"").slice(0,260);
+    return `<div class="pill"><div class="ph"><b>${i+1}. ${esc(LAWS[o.law].short)} · ${esc(a?a.t:o.art)}</b><span class="stats">fallas ${o.ko} de ${o.n} · ${pct(o.acc)} de acierto</span></div>
+    <div class="bar"><span style="width:${100*o.acc}%;background:var(--green)"></span><span style="width:${100-100*o.acc}%;background:var(--red)"></span></div>
+    <p style="margin:8px 0 4px"><b>Lo que hay que clavar:</b> ${esc(cl)}</p>${NOTE[o.law+"|"+o.art]?`<p style="margin:4px 0">💡 ${esc(NOTE[o.law+"|"+o.art])}</p>`:""}
+    <div class="nav" style="margin-top:8px"><button class="btn" data-pgo="${o.law}|${esc(o.art)}">Estudiar</button><button class="btn primary" data-pfail="${o.law}|${esc(o.art)}">Repetir sus ${o.ko} fallos</button></div></div>`; }).join("")
+  :`<p class="empty">Todavía no hay píldoras: responde preguntas y aquí aparecerá lo que más te cuesta.</p>`}</div>`;
+  $("#center").scrollTop=0; showTab("art");
+}
+$("#bPil").addEventListener("click",showPildoras);
+window.showPildoras=showPildoras;
+$("#center").addEventListener("click",e=>{
+  const g=e.target.closest("[data-pgo]"); if(g){ const [l,i]=g.dataset.pgo.split("|"); return openArt(l,i,{tab:true}); }
+  const f=e.target.closest("[data-pfail]"); if(f){ const [l,i]=f.dataset.pfail.split("|"); openArt(l,i); $("#fbank").value="all"; $("#fart").checked=true; $("#fstat").value="fail"; $("#ftopic").value="all"; $("#fexam").value="all"; $("#fsrc").value="all"; buildQueue(); showTab("q"); }
 });
 
 /* ---------- notas mnemotécnicas y ranking ---------- */
@@ -634,7 +678,7 @@ function finishExam(){
     box.insertAdjacentHTML("beforeend",`<div class="why" style="margin-top:6px"><div class="src">${srcHTML(q)}</div>${whyHTML(q,ci)}</div>`);
   });
   const nota=ok-ko/4;
-  Store.data.exams=Store.data.exams||[]; Store.data.exams.push({t:Date.now(),ok,ko,bl,nota,src:EX.src}); Store.save();
+  Store.data.exams=Store.data.exams||[]; Store.data.exams.push({t:Date.now(),ok,ko,bl,nota,src:EX.src}); Store.save(); refreshPil();
   const t=document.querySelector(".exam .timer");
   t.innerHTML=`<span><b style="color:${nota>=20?"var(--ok)":"var(--ko)"}">${nota.toFixed(2)} / 40</b> ${nota>=20?"✔ Aprobado":"✘ No alcanza el 20"}</span><span class="stats">${ok} aciertos · ${ko} fallos (−${(ko/4).toFixed(2)}) · ${bl} en blanco</span><button class="btn" id="exNew">Otro examen</button>`;
   $("#center").scrollTop=0;
@@ -676,7 +720,7 @@ $("#fImport").addEventListener("change",async e=>{
   if(exNew.length){ Store.data.exams=(Store.data.exams||[]).concat(exNew).sort((a,b)=>a.t-b.t); }
   if(supNew.length){ Store.data.sup=Store.data.sup||{}; for(const k of supNew) Store.data.sup[k]=d.sup[k]; }
   if(planNew) window.mergePlan(d.plan,true);
-  Store.save(); buildQueue(); Store.status("ok","Importado: "+(nuevas+act)+" respuestas");
+  Store.save(); refreshPil(); buildQueue(); Store.status("ok","Importado: "+(nuevas+act)+" respuestas");
 });
 
 /* ---------- pestañas móvil y tema ---------- */
@@ -688,7 +732,7 @@ try{ const t=localStorage.getItem("gandia-tema"); if(t) document.documentElement
 /* ---------- arranque ---------- */
 (async function(){
   await Store.init();
-  fillLaws(); fillFilters();
+  refreshPil(); fillLaws(); fillFilters();
   const last=Store.data.last||{};
   if(last.law&&artOf(last.law,last.art)){ S.law=last.law; $("#law").value=S.law; openArt(last.law,last.art); }
   else { renderTree(); openArt("rople","22"); }
@@ -696,6 +740,7 @@ try{ const t=localStorage.getItem("gandia-tema"); if(t) document.documentElement
   if(location.hash==="#ranking") showRanking();
   if(location.hash==="#examen") showExamIntro();
   if(location.hash==="#supuestos") showSupuestos();
+  if(location.hash==="#pildoras") showPildoras();
   if(location.hash==="#novedades") showNovedades();
   if(location.hash==="#calendario") window.showCalendar&&window.showCalendar();
 })();
