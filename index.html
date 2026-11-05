@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subalterno Gandia</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e3e1dc; --soft:#f0eeea;
+  --accent:#1f4e8c; --accent-soft:#e6eef8;
+  --purple:#6a2c9c; --red:#b3261e; --green-bg:#d5edc8; --green:#2e7d32;
+  --ok-bg:#e3f4e1; --ok:#1e6b2a; --ko-bg:#fbe4e2; --ko:#a3221a; --warn:#8a5a00; --warn-bg:#fff3d6;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141416; --panel:#1d1d20; --ink:#ececee; --muted:#a2a2a8; --line:#323236; --soft:#26262a;
+    --accent:#8fb5ee; --accent-soft:#22324a; --purple:#c9a2ee; --red:#ff8a80; --green-bg:#264a22; --green:#8bd48f;
+    --ok-bg:#1f3a22; --ok:#9be3a2; --ko-bg:#4a2220; --ko:#ffb3ab; --warn:#ffd27a; --warn-bg:#3d3013;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141416; --panel:#1d1d20; --ink:#ececee; --muted:#a2a2a8; --line:#323236; --soft:#26262a;
+  --accent:#8fb5ee; --accent-soft:#22324a; --purple:#c9a2ee; --red:#ff8a80; --green-bg:#264a22; --green:#8bd48f;
+  --ok-bg:#1f3a22; --ok:#9be3a2; --ko-bg:#4a2220; --ko:#ffb3ab; --warn:#ffd27a; --warn-bg:#3d3013;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+header .sp{flex:1}
+.save{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--green)} .dot.local{background:#d49b00} .dot.err{background:var(--red)}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
+.iconbtn:hover{background:var(--soft)}
+main{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(340px,440px);height:calc(100% - 53px)}
+.col{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+.colhead{padding:12px 14px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:8px}
+.colhead h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;font-weight:600}
+.scroll{overflow:auto;flex:1;min-height:0}
+select,input[type=search],input[type=text]{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* índice */
+.tree{padding:6px 0 30px;overflow-x:hidden}
+.tree .h{padding:10px 14px 4px;font-size:12px;font-weight:650;color:var(--muted);text-transform:none}
+.tree .h.l1{color:var(--accent);font-size:12.5px;padding-top:14px}
+.tree .h.l3{padding-left:22px;font-weight:600}
+.tree .a{display:flex;gap:8px;align-items:baseline;padding:5px 14px 5px 22px;cursor:pointer;border-left:3px solid transparent}
+.tree .a:hover{background:var(--soft)}
+.tree .a.sel{background:var(--accent-soft);border-left-color:var(--accent)}
+.tree .a .n{font-weight:600;white-space:nowrap;font-size:13.5px}
+.tree .a .s{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.b{font-size:11px;border-radius:10px;padding:0 6px;white-space:nowrap;font-weight:600}
+.b.ex{color:var(--green);background:var(--green-bg)}
+.b.top{color:#fff;background:var(--red)}
+.b.q{color:var(--accent);background:var(--accent-soft)}
+.grp{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:3px 6px 3px 10px;background:var(--soft);flex-wrap:wrap}
+.cal .cform{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:10px 0;background:var(--panel)}
+.cal .cform summary{cursor:pointer;font-weight:650}
+.cal .cfg{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+.cal .cfg input[type=date]{padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.cal .hd{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--muted)}
+.cal .hd input{width:56px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--panel);text-align:center}
+.cal .cs{font-size:12.5px;color:var(--muted)}
+.cal .csum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 6px}
+.cal .csum div{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;background:var(--panel)}
+.cal .csum b{display:block;font-size:20px;color:var(--accent)} .cal .csum span{font-size:12px;color:var(--muted)}
+.cal .ctabs{display:flex;gap:6px;margin:14px 0 10px}
+.cal .cwk{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.cal .cwh{margin:18px 0 8px;font-size:15px}
+.cal .cd{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--panel)}
+.cal .cd.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cal .cd.rest{opacity:.65}
+.cal .cdh{margin-bottom:6px} .cal .cdh b{text-transform:capitalize}
+.cal .ct{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.cal .ct label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;flex:1;min-width:0}
+.cal .ct input{margin-top:4px}
+.cal .ct.ok b{text-decoration:line-through;color:var(--muted)}
+.cal .ca{display:flex;gap:4px;flex-wrap:wrap}
+@media (max-width:760px){.cal .csum{grid-template-columns:repeat(2,1fr)} .cal .ct{flex-wrap:wrap}}
+@media print{header,.tabs,#c-idx,#c-q,.cal-noprint{display:none!important} body,main{display:block;height:auto;background:#fff;color:#000} .col{display:block!important;max-height:none!important;overflow:visible!important;border:0} .scroll{max-height:none!important;overflow:visible!important} .cal .cd{break-inside:avoid}}
+.b.mod{color:#7a3c00;background:#ffe2c2} :root[data-theme="dark"] .b.mod{color:#ffcf9e;background:#4a2c10}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b.mod{color:#ffcf9e;background:#4a2c10}}
+.b.prov{color:#6a2c9c;background:#efe3fa}
+.tree .a.out{opacity:.55}
+.exam .eq{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--panel)}
+.exam .eq .qt{font-weight:560;margin-bottom:8px}
+.exam .eq label{display:flex;gap:8px;padding:5px 6px;border-radius:8px;cursor:pointer;align-items:flex-start}
+.exam .eq label:hover{background:var(--soft)}
+.exam .eq.ok{border-color:var(--ok)} .exam .eq.ko{border-color:var(--ko)} .exam .eq.bl{border-color:var(--warn)}
+.exam .eq .r{background:var(--ok-bg)} .exam .eq .w{background:var(--ko-bg)}
+.exam .timer{position:sticky;top:0;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+.exam .timer b{font-size:20px;font-variant-numeric:tabular-nums}
+.sup details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:var(--panel)}
+.sup summary{cursor:pointer;font-weight:650}
+.sup .sol li{margin-bottom:6px}
+.grpl{font-size:12px;font-weight:650;color:var(--muted);white-space:nowrap}
+/* centro */
+.searchrow{display:flex;gap:8px;align-items:center}
+.searchrow input{flex:1;min-width:0}
+.searchrow{flex-wrap:wrap}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--muted)}
+.legend label{display:flex;gap:5px;align-items:center;cursor:pointer}
+.article{max-width:820px;margin:0 auto;padding:22px 28px 60px}
+.article .crumb{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.article h3{font-size:22px;margin:0 0 6px;letter-spacing:-.01em}
+.article .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.article p{margin:0 0 10px;text-align:justify}
+.article p.li{padding-left:20px}
+.nav{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+:root[data-theme="dark"] .btn.primary{color:#0d1a2b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0d1a2b}}
+.mk-u .u{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px;color:var(--purple)}
+.mk-r .r{color:var(--red);font-weight:650}
+.mk-r .u.r{color:var(--red)}
+.mk-g .g{background:var(--green-bg);border-radius:2px}
+mark{background:#ffe066;color:#000;border-radius:2px}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%{background:#ffe9a8}100%{background:transparent}}
+.results{max-width:820px;margin:0 auto;padding:14px 28px 40px}
+.res{padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--panel)}
+.res:hover{border-color:var(--accent)}
+.res .t{font-weight:600;font-size:13.5px}
+.res .x{font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);padding:30px;text-align:center}
+/* preguntas */
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.filters .full{grid-column:1/-1}
+.stats{font-size:12.5px;color:var(--muted)}
+.bar{height:6px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:4px;display:flex}
+.bar span{display:block;height:100%}
+.qwrap{padding:14px}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.qmeta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 10px;margin-bottom:8px}
+.qtext{font-weight:560;margin-bottom:12px}
+.opt{display:flex;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 11px;margin-bottom:7px;cursor:pointer;line-height:1.4}
+.opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.opt .L{font-weight:700;min-width:18px}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--ok-bg);border-color:var(--ok)}
+.opt.wrong{background:var(--ko-bg);border-color:var(--ko)}
+.fb{margin-top:10px;border-radius:10px;padding:12px;font-size:14px}
+.fb.ok{background:var(--ok-bg);color:var(--ok)}
+.fb.ko{background:var(--ko-bg);color:var(--ko)}
+.why{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;background:var(--soft)}
+.why .src{font-size:12.5px;margin-bottom:6px}
+.why .src b.of{color:var(--green)} .why .src b.pr{color:var(--purple)} .why .src b.du{color:var(--red)}
+.why blockquote{margin:8px 0;padding:8px 10px;border-left:3px solid var(--accent);background:var(--panel);border-radius:0 8px 8px 0;font-size:13.5px}
+.qnav{display:flex;gap:8px;margin-top:12px;justify-content:space-between;align-items:center}
+.qnav .btn{white-space:nowrap}
+@media (max-width:1400px){.qnav .kbd{display:none}}
+.kbd{font-size:11.5px;color:var(--muted)}
+.tabs{display:none}
+.hdr{font-weight:600}
+.note{border:1px solid #e0c46c;background:#fff8e1;color:#5d4500;border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:14px}
+:root[data-theme="dark"] .note{background:#3a3115;color:#ffe7a3;border-color:#7a6420}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .note{background:#3a3115;color:#ffe7a3;border-color:#7a6420}}
+.rank{max-width:1000px;margin:0 auto;padding:18px 22px 50px}
+.rank h3{margin:0 0 4px;font-size:20px}
+.rank table{width:100%;border-collapse:collapse;font-size:13.5px}
+.rank th{position:sticky;top:0;background:var(--panel);text-align:left;font-size:12px;color:var(--muted);padding:8px 6px;border-bottom:2px solid var(--line)}
+.rank td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.rank tr:hover td{background:var(--soft)}
+.rank .pos{font-weight:700;color:var(--accent);width:34px}
+.rank .art{font-weight:650;cursor:pointer;color:var(--accent)}
+.rank .sub{color:var(--muted);font-size:12.5px}
+.rank details summary{cursor:pointer;color:var(--purple);font-weight:600;font-size:12.5px}
+.rank .nt{margin-top:6px;font-size:13px}
+.rank .num{text-align:center;white-space:nowrap}
+@media (max-width:1100px){
+  main{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}
+  main .col.q{grid-column:1/-1;border-top:1px solid var(--line)}
+  main{height:auto} .col{max-height:none} .scroll{max-height:70vh}
+}
+@media (max-width:760px){
+  header{flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .tabs{display:flex;gap:6px;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+  .tabs button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px;cursor:pointer}
+  .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  main{display:block}
+  .col{display:none;border:0} .col.on{display:flex}
+  .scroll{max-height:none}
+  .article,.results{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Estudio · Subalterno Gandia</h1>
+  <button class="iconbtn hdr" id="bRank" title="Artículos más preguntados, con notas para memorizar">🏆 Ranking</button>
+  <button class="iconbtn hdr" id="bSim" title="Preguntas nuevas redactadas por Claude sobre los 16 temas, con su porqué">🔥 Simulacro (<span id="nSim"></span>)</button>
+  <button class="iconbtn hdr" id="bReal" title="Preguntas de exámenes reales de subalterno, conserje y de la Comunitat">📝 Exámenes reales (<span id="nReal"></span>)</button>
+  <button class="iconbtn hdr" id="bExam" title="Primer ejercicio como el de Gandia: 40 preguntas, 57 minutos, cada fallo resta 1/4">⏱ Examen tipo Gandia</button>
+  <button class="iconbtn hdr" id="bSup" title="Segundo ejercicio: supuestos prácticos con solución modelo">🧩 Supuestos prácticos</button>
+  <button class="iconbtn hdr" id="bNov" title="Artículos modificados recientemente">🆕 Novedades legales</button>
+  <span class="sp"></span>
+  <button class="iconbtn hdr" id="bCal" title="Calendario de estudio por días, semanas y horas hasta el examen">📅 Calendario</button>
+  <button class="iconbtn" id="bExport" title="Descargar un archivo con tu progreso (solo el de este navegador)">⬇ Exportar progreso</button>
+  <button class="iconbtn" id="bImport" title="Cargar un archivo de progreso exportado antes; se fusiona con el actual">⬆ Importar progreso</button>
+  <input type="file" id="fImport" accept=".json,application/json" hidden>
+  <span class="save" id="save"><span class="dot" id="savedot"></span><span id="savetxt">Cargando…</span></span>
+  <button class="iconbtn" id="theme" title="Cambiar tema claro/oscuro">◐</button>
+</header>
+<div class="tabs" id="tabs">
+  <button data-c="idx">Índice</button><button data-c="art" class="on">Artículo</button><button data-c="q">Preguntas</button>
+</div>
+<main>
+  <section class="col idx" id="c-idx">
+    <div class="colhead">
+      <h2>Ley o apuntes del tema</h2>
+      <select id="law"></select>
+      <input type="search" id="idxf" placeholder="Filtrar índice (p. ej. 22, Pleno, llaves)">
+    </div>
+    <div class="scroll"><div class="tree" id="tree"></div></div>
+  </section>
+
+  <section class="col art on" id="c-art">
+    <div class="colhead">
+      <h2>Buscador</h2>
+      <div class="searchrow">
+        <input type="search" id="q" placeholder="Artículo (21, art. 22, 24 bis) o palabras (quórum, extintor, padrón…)">
+        <label class="chk"><input type="checkbox" id="all"> todas las leyes</label>
+        <button class="btn" id="bRank2" title="Ver los artículos y leyes más preguntados" style="white-space:nowrap">🏆 Ranking</button>
+      </div>
+      <div class="legend">
+        <label><input type="checkbox" id="mu" checked> <span style="color:var(--purple);text-decoration:underline">Palabras gancho</span></label>
+        <label><input type="checkbox" id="mr" checked> <b style="color:var(--red)">Lo más importante</b></label>
+        <label><input type="checkbox" id="mg" checked> <span style="background:var(--green-bg)">Preguntado en exámenes</span></label><span class="b mod">🆕 Modificado</span>
+      </div>
+    </div>
+    <div class="scroll" id="center"></div>
+  </section>
+
+  <section class="col q" id="c-q">
+    <div class="colhead">
+      <h2>Preguntas de examen</h2>
+      <div class="filters">
+        <select id="fbank" class="full" title="Banco de preguntas"><option value="real">Exámenes reales (todos)</option><option value="gva">Exámenes oficiales Subalternos GVA</option><option value="muni">Exámenes de conserje y subalterno de ayuntamientos</option><option value="reg">Exámenes de la Comunitat (Alcoi, Alicante, Valencia…)</option><option value="sim">Simulacro Gandia (Claude)</option><option value="all">Todos los bancos</option></select>
+        <select id="ftopic" class="full" title="Ley o tema"></select>
+        <select id="fexam" class="full" title="Examen"></select>
+        <select id="fsrc" title="Fuente de la respuesta">
+          <option value="all">Todas las fuentes</option><option value="oficial">Solo plantilla oficial</option><option value="propuesta">Solo propuestas</option><option value="claude">Redactadas por Claude</option>
+        </select>
+        <select id="fstat" title="Estado">
+          <option value="pend">Sin responder</option><option value="fail">Falladas</option><option value="all">Todas</option><option value="ok">Acertadas</option>
+        </select>
+        <select id="ford" title="Orden"><option value="seq">Orden del examen</option><option value="rnd">Aleatorio</option></select>
+        <label class="chk"><input type="checkbox" id="fart"> Solo artículo abierto</label>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="scroll"><div class="qwrap" id="qwrap"></div></div>
+  </section>
+</main>
+
+<script src="data/laws.js"></script>
+<script src="data/questions.js"></script>
+<script src="data/ranking.js"></script>
+<script src="data/extra.js"></script>
+<script>
+"use strict";
+const LAWS = window.LAWS, QS = window.QUESTIONS, TEMAS = window.TEMAS||{};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const LAWKEYS = Object.keys(LAWS);
+const ABC = ["a","b","c","d"];
+const PKEY = "gandia-progreso";
+const fdate = f => f ? f.slice(6,8)+"/"+f.slice(4,6)+"/"+f.slice(0,4) : "";
+
+/* ---------- bancos ---------- */
+function inBank(q,bk){ if(bk==="all") return true; if(bk==="real") return !!q.real; return q.b===bk; }
+const BANKNAME = {reg:"Examen real de la Comunitat", gva:"Examen oficial de Subalternos de la Generalitat", muni:"Examen real de conserje o subalterno de ayuntamiento", sim:"Simulacro Gandia", libro:"Tests de repaso Subalternos GVA (libro del curso)", prac:"Material de práctica del curso"};
+
+/* ---------- índices de datos ---------- */
+const ART = {};
+for (const law of LAWKEYS){
+  const arr=[]; const path=[];
+  for (const n of LAWS[law].nodes){
+    if (n.k==="h"){ path[n.lv-1]=n.t; path.length=n.lv; arr.push({h:true,lv:n.lv,t:n.t}); }
+    else { const a=Object.assign({},n,{path:path.filter(Boolean).slice(),law}); a.plain=a.p.map(par=>par.map(s=>typeof s==="string"?s:s[0]).join("")); arr.push(a); }
+  }
+  ART[law]=arr;
+}
+const artOf = (law,id) => ART[law] && ART[law].find(a=>!a.h && a.id===id);
+const QBYART = {};
+for (const q of QS){ if(q.law&&q.art){ const k=q.law+"|"+q.art; (QBYART[k]=QBYART[k]||[]).push(q); } }
+
+/* ---------- progreso: servidor local o navegador ---------- */
+const Store = {
+  mode:"local", data:{v:1,answers:{},last:{}}, timer:null,
+  async init(){
+    let local=null;
+    try{ local=JSON.parse(localStorage.getItem(PKEY)||"null"); }catch(e){}
+    if (location.protocol.startsWith("http")){
+      try{
+        const r=await fetch("/api/progress",{cache:"no-store"});
+        if(r.ok){ const d=await r.json(); this.mode="server"; this.data=d;
+          if(local && local.answers){ for(const [k,v] of Object.entries(local.answers)){ if(!d.answers[k] || (v.t||0)>(d.answers[k].t||0)) d.answers[k]=v; } }
+          this.status("ok","Progreso guardado en progreso.json"); this.save(); return; }
+      }catch(e){}
+    }
+    if(local&&local.answers) this.data=local;
+    this.status("local","Progreso guardado en este navegador");
+  },
+  status(kind,txt){ $("#savedot").className="dot "+kind; $("#savetxt").textContent=txt; },
+  save(){
+    try{ localStorage.setItem(PKEY,JSON.stringify(this.data)); }catch(e){}
+    if(this.mode!=="server") return;
+    clearTimeout(this.timer);
+    this.timer=setTimeout(async()=>{
+      try{
+        const r=await fetch("/api/progress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(this.data)});
+        if(!r.ok) throw new Error(r.status);
+        const j=await r.json(); this.status("ok","Guardado "+j.saved.slice(11,16)+" · "+j.n+" respuestas");
+      }catch(e){ this.status("err","Sin conexión con el servidor: guardado en el navegador"); }
+    },350);
+  }
+};
+
+/* ---------- estado ---------- */
+const S = { law:"rople", art:null, search:"", qlist:[], qi:0, answered:null };
+
+/* ---------- índice ---------- */
+function fillLaws(){
+  const sel=$("#law");
+  sel.innerHTML=`<optgroup label="Leyes y reglamentos">`+LAWKEYS.filter(k=>!LAWS[k].apuntes).map(k=>`<option value="${k}">${esc(LAWS[k].name)}</option>`).join("")+`</optgroup><optgroup label="Apuntes de los temas prácticos">`+LAWKEYS.filter(k=>LAWS[k].apuntes).map(k=>`<option value="${k}">${esc(LAWS[k].name)}</option>`).join("")+`</optgroup>`;
+  sel.value=S.law;
+}
+function renderTree(){
+  const f=norm($("#idxf").value.trim());
+  const out=[]; const ap=LAWS[S.law].apuntes;
+  if(!f) out.push(`<div class="h l1" style="font-weight:500">${esc(LAWS[S.law].src||"")}${ap?"":" · Temas "+(LAWS[S.law].temas||[]).join(", ")}${ap?"":` · <span style="opacity:.7">atenuado = fuera del temario</span>`}</div>`);
+  for(const n of ART[S.law]){
+    if(n.h){ if(!f) out.push(`<div class="h l${n.lv}">${esc(n.t)}</div>`); continue; }
+    const first=(n.plain[0]||"").slice(0,90);
+    if(f){ const num=f.replace(/^art(iculo)?\.?\s*/,""); if(!(norm(n.id)===num || norm(n.t).includes(f) || norm(n.plain.join(" ")).includes(f))) continue; }
+    const nq=(QBYART[S.law+"|"+n.id]||[]).length;
+    out.push(`<div class="a${S.art===n.id?" sel":""}${n.tm?"":" out"}" data-id="${esc(n.id)}"><span class="n">${esc(ap?n.id:n.t.replace(/^Artículo/,"Art.").replace(/^(Art\. [\w ]+?\.).*$/,"$1"))}</span><span class="s">${esc(ap?n.t.replace(/^[\d.]+\.\s*/,""):first)}</span>${n.mod&&n.mod>="20230101"?'<span class="b mod" title="Modificado el '+fdate(n.mod)+'">🆕</span>':""}${n.top?'<span class="b top" title="Prioridad máxima">A</span>':""}${n.ex?`<span class="b ex" title="Exámenes reales en que ha salido">${n.ex}</span>`:""}${nq?`<span class="b q" title="Preguntas en el banco">${nq}P</span>`:""}</div>`);
+  }
+  $("#tree").innerHTML=out.join("")||`<div class="empty">Nada coincide con el filtro.</div>`;
+}
+$("#tree").addEventListener("click",e=>{ const a=e.target.closest(".a"); if(a) openArt(S.law,a.dataset.id); });
+$("#law").addEventListener("change",e=>{ S.law=e.target.value; S.art=null; renderTree(); const first=ART[S.law].find(a=>!a.h&&a.tm)||ART[S.law].find(a=>!a.h); if(first) openArt(S.law,first.id); });
+$("#idxf").addEventListener("input",renderTree);
+
+/* ---------- artículo ---------- */
+function segHTML(par,terms){
+  return par.map(s=>{
+    let t,f=""; if(typeof s==="string") t=s; else {t=s[0]; f=s[1]||"";}
+    let h=esc(t);
+    if(terms.length) h=highlight(h,terms);
+    if(!f) return h;
+    return `<span class="${f.split("").join(" ")}">${h}</span>`;
+  }).join("");
+}
+function highlight(h,terms){
+  for(const t of terms){ if(t.length<3) continue;
+    const re=new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"); h=h.replace(re,"<mark>$1</mark>"); }
+  return h;
+}
+function openArt(law,id,opts={}){
+  const a=artOf(law,id); if(!a) return;
+  if(S.law!==law){ S.law=law; $("#law").value=law; }
+  S.art=id; Store.data.last={law,art:id}; Store.save();
+  renderTree();
+  const sel=$("#tree .a.sel"); if(sel && !opts.noscroll) sel.scrollIntoView({block:"nearest"});
+  const terms=opts.terms||[];
+  const list=ART[law].filter(x=>!x.h); const i=list.indexOf(a);
+  const nq=(QBYART[law+"|"+id]||[]).length;
+  const pars=a.p.map((par,k)=>{ const txt=a.plain[k]; const li=/^[a-zñ]\)\s/.test(txt);
+    return `<p class="${li?"li":""}" data-k="${k}">${segHTML(par,terms)}</p>`; }).join("");
+  const ap=LAWS[law].apuntes;
+  $("#center").innerHTML=`<div class="article ${marksClass()}">
+    <div class="crumb">${esc(LAWS[law].short)}${a.path.length?" · "+esc(a.path.join(" · ")):""}</div>
+    <h3>${esc(a.t)}</h3>
+    <div class="meta">${a.top?'<span class="b top">Prioridad A</span>':""}${a.mod?`<span class="b mod">${a.mod>="20230101"?"🆕 ":""}Redacción vigente desde ${fdate(a.mod)}</span>`:""}${!a.tm&&!ap?'<span class="b" style="background:var(--soft);color:var(--muted)">Fuera del temario de Gandia (sólo consulta)</span>':""}${a.ex?`<span class="b ex">Ha salido en ${a.ex} examen${a.ex>1?"es":""} real${a.ex>1?"es":""}</span>`:""}${nq?`<span class="b q">${nq} pregunta${nq>1?"s":""} en el banco</span>`:""}</div>
+    ${noteHTML(law,id)}
+    ${pars||'<p class="empty">Sin contenido.</p>'}
+    <div class="nav">
+      ${i>0?`<button class="btn" data-go="${esc(list[i-1].id)}">← ${esc(ap?list[i-1].id:list[i-1].t.replace(/^Artículo/,"Art.").slice(0,30))}</button>`:""}
+      ${i<list.length-1?`<button class="btn" data-go="${esc(list[i+1].id)}">${esc(ap?list[i+1].id:list[i+1].t.replace(/^Artículo/,"Art.").slice(0,30))} →</button>`:""}
+      ${nq?`<button class="btn primary" id="practice">Practicar las ${nq} preguntas de ${ap?"este apartado":"este artículo"}</button>`:""}
+    </div></div>`;
+  $("#center").scrollTop=0;
+  if(opts.flash!=null){ const p=$(`#center p[data-k="${opts.flash}"]`); if(p){ p.classList.add("flash"); p.scrollIntoView({block:"center"}); } }
+  if($("#fart").checked) buildQueue();
+  if(opts.tab) showTab("art");
+}
+$("#center").addEventListener("click",e=>{
+  const g=e.target.closest(".article [data-go]"); if(g) return openArt(S.law,g.dataset.go);
+  if(e.target.id==="practice"){ $("#fbank").value="all"; $("#fart").checked=true; $("#fstat").value="all"; $("#ftopic").value="all"; $("#fexam").value="all"; buildQueue(); showTab("q"); }
+  const r=e.target.closest(".res"); if(r) openArt(r.dataset.law,r.dataset.id,{terms:S.terms,flash:+r.dataset.k});
+});
+function marksClass(){ return [$("#mu").checked?"mk-u":"",$("#mr").checked?"mk-r":"",$("#mg").checked?"mk-g":""].join(" "); }
+for(const id of ["#mu","#mr","#mg"]) $(id).addEventListener("change",()=>{ const el=$("#center .article"); if(el) el.className="article "+marksClass(); });
+
+/* ---------- buscador ---------- */
+function doSearch(){
+  const raw=$("#q").value.trim(); S.terms=[];
+  if(!raw){ if(S.art) openArt(S.law,S.art); return; }
+  const m=raw.match(/^(?:art(?:[íi]culo)?\.?\s*)?(\d+(?:\.\d+)?)(?:\s*(bis|ter|qu[aá]ter))?$/i);
+  if(m){
+    const id=m[1]+(m[2]?" "+norm(m[2]):"");
+    const laws=$("#all").checked?LAWKEYS:[S.law];
+    const hits=laws.filter(l=>artOf(l,id));
+    if(hits.length===1) return openArt(hits[0],id);
+    if(hits.length>1) return renderResults(hits.map(l=>({law:l,a:artOf(l,id),k:0,snip:artOf(l,id).plain[0]||""})),raw);
+    $("#center").innerHTML=`<div class="empty">No hay artículo ${esc(id)} en ${esc(LAWS[S.law].short)}.</div>`; return;
+  }
+  const terms=norm(raw).split(/\s+/).filter(t=>t.length>=2);
+  S.terms=raw.split(/\s+/).filter(t=>t.length>=3);
+  const laws=$("#all").checked?LAWKEYS:[S.law];
+  const res=[];
+  for(const l of laws) for(const a of ART[l]){ if(a.h) continue;
+    a.plain.forEach((txt,k)=>{ const nt=norm(txt); if(terms.every(t=>nt.includes(t))) res.push({law:l,a,k,snip:txt}); });
+  }
+  renderResults(res.slice(0,300),raw,res.length);
+}
+function renderResults(res,raw,total){
+  const terms=raw.split(/\s+/).filter(t=>t.length>=3);
+  $("#center").innerHTML=`<div class="results"><div class="stats" style="margin-bottom:10px">${total??res.length} resultado${(total??res.length)===1?"":"s"} para «${esc(raw)}»${total>300?" (se muestran 300)":""}</div>`+
+    (res.map(r=>`<div class="res" data-law="${r.law}" data-id="${esc(r.a.id)}" data-k="${r.k}"><div class="t">${esc(LAWS[r.law].short)} · ${esc(r.a.t)} ${r.a.ex?`<span class="b ex">${r.a.ex}</span>`:""}</div><div class="x">${highlight(esc(snip(r.snip,terms)),terms)}</div></div>`).join("")||'<div class="empty">Sin resultados.</div>')+`</div>`;
+}
+function snip(t,terms){ if(t.length<=260) return t; const n=norm(t); let i=terms.length?n.indexOf(norm(terms[0])):0; i=Math.max(0,i-80); return (i>0?"…":"")+t.slice(i,i+260)+"…"; }
+let st; $("#q").addEventListener("input",()=>{ clearTimeout(st); st=setTimeout(doSearch,220); });
+$("#q").addEventListener("keydown",e=>{ if(e.key==="Enter"){ clearTimeout(st); doSearch(); } });
+$("#all").addEventListener("change",doSearch);
+
+/* ---------- preguntas ---------- */
+const TOPICS=Object.keys(TEMAS).sort((a,b)=>a-b).map(k=>TEMAS[k]);
+const EXAMS=[...new Set(QS.map(q=>q.ex))];
+function fillFilters(){
+  $("#ftopic").innerHTML=`<option value="all">Todos los temas (${QS.length})</option>`+TOPICS.map(t=>`<option value="${esc(t)}">${esc(t)} (${QS.filter(q=>q.topic===t).length})</option>`).join("");
+  $("#fexam").innerHTML=`<option value="all">Todos los exámenes y fuentes (${EXAMS.length})</option>`+EXAMS.map(t=>`<option value="${esc(t)}">${esc(t)} (${QS.filter(q=>q.ex===t).length})</option>`).join("");
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function buildQueue(){
+  const t=$("#ftopic").value,e=$("#fexam").value,s=$("#fsrc").value,st=$("#fstat").value,onlyArt=$("#fart").checked;
+  const A=Store.data.answers;
+  const bk=$("#fbank").value;
+  let l=QS.filter(q=>inBank(q,bk)&&(t==="all"||q.topic===t)&&(e==="all"||q.ex===e)&&(s==="all"||q.src===s)
+    &&(!onlyArt||(q.law===S.law&&q.art===S.art))
+    &&(st==="all"||(st==="pend"&&!A[q.id])||(st==="fail"&&A[q.id]&&!A[q.id].ok)||(st==="ok"&&A[q.id]&&A[q.id].ok)));
+  if($("#ford").value==="rnd") shuffle(l);
+  S.qlist=l; S.qi=0; S.answered=null;
+  renderStats(); renderQ();
+}
+for(const id of ["#fbank","#ftopic","#fexam","#fsrc","#fstat","#ford","#fart"]) $(id).addEventListener("change",()=>buildQueue());
+
+function renderStats(){
+  const t=$("#ftopic").value,e=$("#fexam").value;
+  const bk=$("#fbank").value;
+  const pool=QS.filter(q=>inBank(q,bk)&&(t==="all"||q.topic===t)&&(e==="all"||q.ex===e));
+  const A=Store.data.answers; let ok=0,ko=0;
+  for(const q of pool){ const a=A[q.id]; if(a){ a.ok?ok++:ko++; } }
+  const n=pool.length, done=ok+ko, pct=done?Math.round(100*ok/done):0;
+  $("#stats").innerHTML=`${done} de ${n} respondidas · <b style="color:var(--ok)">${ok} aciertos</b> · <b style="color:var(--ko)">${ko} fallos</b>${done?` · ${pct}% de acierto`:""} · en cola: ${S.qlist.length}
+  <div class="bar"><span style="width:${100*ok/n||0}%;background:var(--green)"></span><span style="width:${100*ko/n||0}%;background:var(--red)"></span></div>`;
+}
+function renderQ(){
+  const box=$("#qwrap");
+  if(!S.qlist.length){
+    const st=$("#fstat").value;
+    box.innerHTML=`<div class="empty">${st==="pend"?"¡Has respondido todas las preguntas de este filtro! Cambia el estado a «Falladas» para repasar.":st==="fail"?"No tienes fallos en este filtro.":"No hay preguntas con estos filtros."}</div>`; return;
+  }
+  const q=S.qlist[S.qi]; const prev=Store.data.answers[q.id];
+  box.innerHTML=`<div class="qcard">
+    <div class="qmeta"><span>${S.qi+1} / ${S.qlist.length}</span><span>${esc(q.ex)}${q.n&&q.n!=="?"?" · nº "+esc(q.n):""}</span><span>${esc(q.topic)}</span>${q.lvl?'<span class="b" title="Examen del turno de diversidad funcional intelectual (lectura fácil)">lectura fácil</span>':""}${q.prov?'<span class="b prov">provisional</span>':""}${prev?`<span>Último intento: ${prev.ok?"✔ acertada":"✘ fallada"}</span>`:""}</div>
+    <div class="qtext">${esc(q.q)}</div>
+    <div id="opts">${q.o.map((o,i)=>`<button class="opt" data-l="${ABC[i]}"><span class="L">${ABC[i]})</span><span>${esc(o)}</span></button>`).join("")}</div>
+    <div id="fb"></div>
+    <div class="qnav"><button class="btn" id="qprev" ${S.qi?"":"disabled"}>← Anterior</button><span class="kbd">Teclas: A–D responder · → siguiente</span><button class="btn primary" id="qnext">${S.qi<S.qlist.length-1?"Siguiente →":"Volver a empezar"}</button></div>
+  </div>`;
+  S.answered=null;
+}
+function srcHTML(q){
+  if(q.src==="claude") return `<b class="pr">Pregunta del Simulacro Gandia</b>: redactada por Claude sobre el texto vigente y el material del Ayuntamiento, con nivel de tribunal exigente.${q.prov?' <b class="du">Provisional: se revisará cuando se apruebe el III Plan de Igualdad (13/11/2026).</b>':""}<div style="margin-top:6px">${esc(q.why||"")}</div>`;
+  if(q.src==="oficial") return `<b class="of">Respuesta oficial</b>: plantilla publicada por el tribunal. <span class="kbd">${esc(BANKNAME[q.b]||"")}</span>`;
+  if(q.src==="libro") return `<b class="pr">Material del curso</b>: solución del propio libro o test (no es un examen oficial).`;
+  if(q.dud) return `<b class="du">Respuesta propuesta y dudosa</b>: no había plantilla oficial y el texto del escaneo no es claro. Compruébala con la ley.`;
+  return `<b class="pr">Respuesta propuesta</b>: examen real sin plantilla oficial disponible; la respuesta es de Claude. <span class="kbd">${esc(BANKNAME[q.b]||"")}</span>`;
+}
+function answer(l){
+  if(S.answered) return;
+  const q=S.qlist[S.qi]; S.answered=l;
+  const ok=l===q.a;
+  const A=Store.data.answers; const prev=A[q.id];
+  A[q.id]={c:l,ok,n:(prev?prev.n:0)+1,t:Date.now()};
+  Store.save();
+  document.querySelectorAll("#opts .opt").forEach(b=>{ b.disabled=true; if(b.dataset.l===q.a) b.classList.add("right"); else if(b.dataset.l===l) b.classList.add("wrong"); });
+  const ci=ABC.indexOf(q.a);
+  $("#fb").innerHTML=`<div class="fb ${ok?"ok":"ko"}">${ok?"✔ ¡Correcto!":`✘ Fallo. La respuesta correcta es la <b>${q.a})</b> ${esc(q.o[ci])}`}</div>
+    <div class="why"><div class="src">${srcHTML(q)}</div>${whyHTML(q,ci)}</div>`;
+  renderStats();
+}
+function whyHTML(q,ci){
+  if(q.law&&q.art&&artOf(q.law,q.art)){
+    const a=artOf(q.law,q.art);
+    const k=bestPar(a,q.o[ci]+" "+q.q);
+    const ap=LAWS[q.law].apuntes;
+    return `<div>${ap?"Apunte":"Fundamento"}: <b>${esc(a.t)} · ${esc(LAWS[q.law].short)}</b>${q.aprox?' <span class="kbd">(localizado por similitud de texto)</span>':""}</div>
+      <blockquote>${esc(a.plain[k]||"")}</blockquote>
+      <button class="btn primary goart" id="goart" data-law="${q.law}" data-id="${esc(q.art)}" data-k="${k}">Ver ${ap?"el apunte":"el artículo"} completo →</button>`;
+  }
+  return `<div>Tema: <b>${esc(q.topic)}</b>. El enunciado no cita un artículo concreto.</div>`;
+}
+function bestPar(a,text){
+  const w=new Set(norm(text).match(/[a-zñ]{4,}/g)||[]); let best=0,bs=-1;
+  a.plain.forEach((p,k)=>{ const pw=norm(p).match(/[a-zñ]{4,}/g)||[]; let s=0; const seen=new Set(); for(const x of pw){ if(w.has(x)&&!seen.has(x)){s++;seen.add(x);} } if(s>bs){bs=s;best=k;} });
+  return best;
+}
+function nextQ(){ if(S.qi<S.qlist.length-1){ S.qi++; renderQ(); } else { buildQueue(); } $("#qwrap").parentElement.scrollTop=0; }
+$("#qwrap").addEventListener("click",e=>{
+  const b=e.target.closest(".opt"); if(b&&!b.disabled) return answer(b.dataset.l);
+  if(e.target.id==="qnext") return nextQ();
+  if(e.target.id==="qprev"){ S.qi=Math.max(0,S.qi-1); return renderQ(); }
+  const g=e.target.closest("#goart"); if(g) openArt(g.dataset.law,g.dataset.id,{flash:+g.dataset.k,tab:true});
+});
+document.addEventListener("keydown",e=>{
+  if(["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName)) return;
+  if($("#center .exam")) return;
+  const k=e.key.toLowerCase();
+  if(["a","b","c","d","1","2","3","4"].includes(k)){ const l=isNaN(+k)?k:ABC[+k-1]; if(S.qlist.length&&ABC.indexOf(l)<S.qlist[S.qi].o.length) answer(l); }
+  else if(k==="arrowright"||k==="enter"){ if(S.answered) nextQ(); }
+});
+
+/* ---------- notas mnemotécnicas y ranking ---------- */
+const NOTE={}; for(const r of (window.RANKING||[])) if(r.note && !NOTE[r.law+"|"+r.art]) NOTE[r.law+"|"+r.art]=r.note;
+function noteHTML(law,id){ const n=NOTE[law+"|"+id]; return n?`<div class="note">💡 <b>Para memorizar:</b> ${esc(n)}</div>`:""; }
+function showRanking(){
+  const rows=(window.RANKING||[]).map((r,i)=>`<tr>
+    <td class="pos">${i+1}${r.pr?`<div><span class="b ${r.pr==="A"?"top":"ex"}" title="Prioridad">${r.pr}</span></div>`:""}</td>
+    <td><span class="b q">${esc(LAWS[r.law].short)}</span></td>
+    <td><div class="art" data-law="${r.law}" data-id="${esc(r.art)}">${esc(r.t)}</div><div class="sub"><b>${esc(r.mat||"")}</b>${r.cl?` — Lo que hay que clavar: ${esc(r.cl)}`:""}</div>
+      ${r.note?`<details><summary>💡 Nota mnemotécnica</summary><div class="nt">${esc(r.note)}</div></details>`:""}</td>
+    <td class="num">${r.n||"—"}${r.sub?`<div class="sub">${r.sub} de subalterno</div>`:""}</td>
+    <td class="num">${r.ex||"—"}</td>
+    <td class="num"><button class="btn" data-go="${r.law}|${esc(r.art)}">Ir al artículo</button><br><button class="btn" style="margin-top:4px" data-pr="${r.law}|${esc(r.art)}">Practicar</button></td></tr>`).join("");
+  $("#center").innerHTML=`<div class="rank"><h3>🏆 Artículos más preguntados · Subalterno Gandia</h3>
+    <p class="stats">Ranking de ${(window.RANKING||[]).length} artículos del temario de Gandia. Sale de las <b>${QS.filter(q=>q.real).length} preguntas de exámenes reales</b>: oficiales de Subalternos de la Generalitat (2019-2025), conserjes y subalternos de ayuntamientos (Torrent, Torrelavega, Laredo, Jerez) y los exámenes de Administrativo y Auxiliar de Alcoi, Alicante, Valencia, Diputación y Generalitat. Las preguntas de subalterno pesan el doble. El ROPLE, el ROGA, la Ley Postal y el RD 203/2021 no tienen exámenes previos: su prioridad la marca el profesor. <b>A</b> = máxima, <b>B</b> = alta, <b>C</b> = media. Todos llevan nota mnemotécnica; ⚠ avisa si el artículo ha cambiado.</p>
+    <table><thead><tr><th>#</th><th>Norma</th><th>Artículo y qué clavar</th><th>Preguntas</th><th>Exámenes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  $("#center").scrollTop=0; showTab("art");
+}
+$("#bRank").addEventListener("click",()=>showRanking());
+$("#bRank2").addEventListener("click",()=>showRanking());
+function openBank(bk){ $("#fbank").value=bk; $("#fstat").value="pend"; $("#fart").checked=false; $("#ftopic").value="all"; $("#fexam").value="all"; $("#fsrc").value="all"; buildQueue(); showTab("q"); }
+$("#bSim").addEventListener("click",()=>openBank("sim"));
+$("#bReal").addEventListener("click",()=>openBank("real"));
+$("#nSim").textContent=QS.filter(q=>q.b==="sim").length;
+$("#nReal").textContent=QS.filter(q=>q.real).length;
+$("#bCal").addEventListener("click",()=>window.showCalendar&&window.showCalendar());
+$("#center").addEventListener("click",e=>{
+  const a=e.target.closest(".rank .art, .nov .art"); if(a) return openArt(a.dataset.law,a.dataset.id);
+  const g=e.target.closest(".rank [data-go], .nov [data-go]"); if(g){ const [l,i]=g.dataset.go.split("|"); return openArt(l,i); }
+  const p=e.target.closest(".rank [data-pr]"); if(p){ const [l,i]=p.dataset.pr.split("|"); openArt(l,i); $("#fbank").value="all"; $("#fart").checked=true; $("#fstat").value="all"; $("#ftopic").value="all"; $("#fexam").value="all"; buildQueue(); showTab("q"); }
+});
+
+/* ---------- novedades legislativas ---------- */
+function showNovedades(){
+  const N=window.NOVEDADES||[];
+  const rows=N.map(n=>`<tr><td class="num">${fdate(n.f)}</td><td><span class="b q">${esc(LAWS[n.law].short)}</span></td><td><div class="art" data-law="${n.law}" data-id="${esc(n.art)}">${esc(n.t)}</div>${n.tm?'<div class="sub"><b>Entra en el temario</b></div>':'<div class="sub">Fuera del temario (sólo consulta)</div>'}</td><td><button class="btn" data-go="${n.law}|${esc(n.art)}">Ver texto vigente</button></td></tr>`).join("");
+  $("#center").innerHTML=`<div class="rank nov"><h3>🆕 Novedades legislativas (desde 2023)</h3>
+  <p class="stats">Todas las leyes de la app se han descargado del BOE (texto consolidado vigente a 05/11/2026). Estos artículos han cambiado de redacción desde 2023. Lo más importante para el examen: <b>art. 69 CE</b> (mayo 2026), <b>arts. 25 y 69 LBRL</b> (octubre 2026: información accesible y diseño universal), <b>arts. 13, 16, 17 y 28 LBRL</b> (diciembre 2023), <b>art. 49 CE</b> (personas con discapacidad, febrero 2024) y <b>art. 7 LPRL</b> (abril 2026). El ROPLE vigente es el de 2023 (BOP 19/04/2023).</p>
+  <table><thead><tr><th>Vigente desde</th><th>Norma</th><th>Artículo</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  $("#center").scrollTop=0; showTab("art");
+}
+$("#bNov").addEventListener("click",showNovedades);
+
+/* ---------- supuestos prácticos ---------- */
+function showSupuestos(){
+  const S2=window.SUPUESTOS||[];
+  $("#center").innerHTML=`<div class="rank sup"><h3>🧩 Supuestos prácticos · 2.º ejercicio</h3>
+  <p class="stats">Segundo ejercicio de Gandia (bases, BOP nº 121 de 29/06/2026): el tribunal prepara <b>tres supuestos</b>, se sortean <b>dos</b> y cada aspirante resuelve <b>uno</b> por escrito en <b>60 a 90 minutos</b> (de 0 a 20 puntos; se aprueba con 10). Se valoran los conocimientos, el planteamiento, la estructura, la resolución de dificultades, la eficacia y la presentación. Escribe tu respuesta antes de abrir la solución modelo y cita siempre la norma (artículo y ley).</p>
+  ${S2.map((s,i)=>`<details><summary>Supuesto ${i+1}. ${esc(s.t)} <span class="kbd">· temas ${esc(s.temas)}</span></summary>
+    <p><b>Enunciado.</b> ${esc(s.enun)}</p><p><b>Se pide.</b> ${esc(s.preg)}</p>
+    <textarea data-sup="${s.id}" rows="6" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel)" placeholder="Escribe aquí tu respuesta (se guarda en tu progreso)">${esc((Store.data.sup||{})[s.id]||"")}</textarea>
+    <details style="margin-top:8px"><summary>Ver solución modelo</summary><ol class="sol">${s.sol.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></details></details>`).join("")}</div>`;
+  $("#center").scrollTop=0; showTab("art");
+}
+$("#bSup").addEventListener("click",showSupuestos);
+$("#center").addEventListener("input",e=>{ const t=e.target.closest("[data-sup]"); if(!t) return; Store.data.sup=Store.data.sup||{}; Store.data.sup[t.dataset.sup]=t.value; Store.save(); });
+
+/* ---------- examen tipo Gandia: 40 preguntas, 57 minutos, -1/4 ---------- */
+const EX = {qs:null, end:0, tick:null, done:false, src:"mix"};
+function pickExam(src){
+  const pool=QS.filter(q=>q.o.length===4 && !q.lvl && (src==="real"?q.real:src==="sim"?q.b==="sim":(q.real||q.b==="sim")));
+  const by={}; for(const q of pool){ (by[q.tema]=by[q.tema]||[]).push(q); }
+  // reparto como el temario: 16 temas, 2-3 preguntas por tema hasta 40
+  const temas=Object.keys(TEMAS).map(Number).filter(t=>by[t]&&by[t].length);
+  const out=[]; const base=Math.floor(40/temas.length); let extra=40-base*temas.length;
+  for(const t of shuffle(temas.slice())){ const k=base+(extra>0?1:0); if(extra>0) extra--; out.push(...shuffle(by[t].slice()).slice(0,k)); }
+  while(out.length<40){ const q=pool[Math.floor(Math.random()*pool.length)]; if(!out.includes(q)) out.push(q); }
+  return shuffle(out.slice(0,40));
+}
+function showExamIntro(){
+  clearInterval(EX.tick); EX.qs=null;
+  const H=(Store.data.exams||[]).slice(-8).reverse();
+  $("#center").innerHTML=`<div class="rank exam"><h3>⏱ Examen tipo Gandia · primer ejercicio</h3>
+  <p class="stats">Como en las bases (BOP nº 121 de 29/06/2026): <b>40 preguntas</b> con 4 opciones, <b>57 minutos</b>. Cada acierto vale <b>1 punto</b>, cada error <b>resta 0,25</b> y las preguntas en blanco no puntúan. Nota sobre 40; <b>se aprueba con 20</b>. Las preguntas se reparten entre los 16 temas.</p>
+  <div class="cfg" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn primary" data-exs="mix">Empezar · reales + simulacro</button><button class="btn" data-exs="real">Sólo preguntas de exámenes reales</button><button class="btn" data-exs="sim">Sólo simulacro de Claude</button></div>
+  ${H.length?`<h4 class="cwh">Tus últimos exámenes</h4><table><thead><tr><th>Fecha</th><th>Aciertos</th><th>Fallos</th><th>Blanco</th><th>Nota /40</th></tr></thead><tbody>${H.map(h=>`<tr><td>${new Date(h.t).toLocaleString("es-ES")}</td><td class="num">${h.ok}</td><td class="num">${h.ko}</td><td class="num">${h.bl}</td><td class="num"><b style="color:${h.nota>=20?"var(--ok)":"var(--ko)"}">${h.nota.toFixed(2)}</b></td></tr>`).join("")}</tbody></table>`:""}
+  </div>`;
+  $("#center").scrollTop=0; showTab("art");
+}
+function startExam(src){
+  EX.qs=pickExam(src); EX.src=src; EX.done=false; EX.ans={}; EX.end=Date.now()+57*60*1000;
+  $("#center").innerHTML=`<div class="rank exam"><div class="timer"><span>⏱ <b id="exT">57:00</b></span><span class="stats" id="exP">0 de 40 respondidas</span><button class="btn primary" id="exFin">Entregar y corregir</button></div>
+  ${EX.qs.map((q,i)=>`<div class="eq" data-i="${i}"><div class="qt">${i+1}. ${esc(q.q)}</div>${q.o.map((o,j)=>`<label><input type="radio" name="e${i}" value="${ABC[j]}"> <span><b>${ABC[j]})</b> ${esc(o)}</span></label>`).join("")}<label style="font-size:12px;color:var(--muted)"><input type="radio" name="e${i}" value="" checked> Dejar en blanco</label></div>`).join("")}
+  <button class="btn primary" id="exFin2">Entregar y corregir</button></div>`;
+  $("#center").scrollTop=0;
+  clearInterval(EX.tick); EX.tick=setInterval(()=>{ const r=Math.max(0,EX.end-Date.now()); const m=Math.floor(r/60000), s=Math.floor(r%60000/1000); const el=$("#exT"); if(!el){ clearInterval(EX.tick); return; } el.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; if(r<=0){ clearInterval(EX.tick); alert("Tiempo agotado: se corrige el examen."); finishExam(); } },500);
+}
+function finishExam(){
+  if(!EX.qs||EX.done) return; EX.done=true; clearInterval(EX.tick);
+  let ok=0,ko=0,bl=0; const A=Store.data.answers;
+  EX.qs.forEach((q,i)=>{
+    const v=(document.querySelector(`input[name="e${i}"]:checked`)||{}).value||"";
+    const box=document.querySelector(`.eq[data-i="${i}"]`);
+    if(!v){ bl++; box.classList.add("bl"); }
+    else if(v===q.a){ ok++; box.classList.add("ok"); }
+    else { ko++; box.classList.add("ko"); }
+    if(v){ const prev=A[q.id]; A[q.id]={c:v,ok:v===q.a,n:(prev?prev.n:0)+1,t:Date.now()}; }
+    box.querySelectorAll("label").forEach(l=>{ const inp=l.querySelector("input"); inp.disabled=true; if(inp.value===q.a) l.classList.add("r"); else if(inp.value&&inp.value===v) l.classList.add("w"); });
+    const ci=ABC.indexOf(q.a);
+    box.insertAdjacentHTML("beforeend",`<div class="why" style="margin-top:6px"><div class="src">${srcHTML(q)}</div>${whyHTML(q,ci)}</div>`);
+  });
+  const nota=ok-ko/4;
+  Store.data.exams=Store.data.exams||[]; Store.data.exams.push({t:Date.now(),ok,ko,bl,nota,src:EX.src}); Store.save();
+  const t=document.querySelector(".exam .timer");
+  t.innerHTML=`<span><b style="color:${nota>=20?"var(--ok)":"var(--ko)"}">${nota.toFixed(2)} / 40</b> ${nota>=20?"✔ Aprobado":"✘ No alcanza el 20"}</span><span class="stats">${ok} aciertos · ${ko} fallos (−${(ko/4).toFixed(2)}) · ${bl} en blanco</span><button class="btn" id="exNew">Otro examen</button>`;
+  $("#center").scrollTop=0;
+}
+$("#bExam").addEventListener("click",showExamIntro);
+$("#center").addEventListener("click",e=>{
+  const b=e.target.closest("[data-exs]"); if(b) return startExam(b.dataset.exs);
+  if(e.target.id==="exFin"||e.target.id==="exFin2"){ if(confirm("¿Entregar el examen y corregirlo?")) finishExam(); return; }
+  if(e.target.id==="exNew") return showExamIntro();
+  const g=e.target.closest(".goart"); if(g) openArt(g.dataset.law,g.dataset.id,{flash:+g.dataset.k,tab:true});
+});
+$("#center").addEventListener("change",e=>{ if(!e.target.closest(".exam")||!EX.qs||EX.done) return; const n=EX.qs.filter((q,i)=>(document.querySelector(`input[name="e${i}"]:checked`)||{}).value).length; const p=$("#exP"); if(p) p.textContent=`${n} de 40 respondidas`; });
+
+/* ---------- exportar / importar progreso ---------- */
+$("#bExport").addEventListener("click",()=>{
+  const d=Store.data, n=Object.keys(d.answers||{}).length;
+  const blob=new Blob([JSON.stringify({app:"estudio-gandia",exportado:new Date().toISOString(),...d},null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="progreso-gandia-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  Store.status("ok","Exportadas "+n+" respuestas");
+});
+$("#bImport").addEventListener("click",()=>$("#fImport").click());
+$("#fImport").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  let d; try{ d=JSON.parse(await f.text()); }catch(err){ alert("Ese archivo no es un progreso válido."); return; }
+  if(!d||typeof d.answers!=="object"){ alert("Ese archivo no es un progreso válido."); return; }
+  const A=Store.data.answers; let nuevas=0, act=0;
+  for(const [k,v] of Object.entries(d.answers)){
+    if(!v||typeof v.ok!=="boolean") continue;
+    if(!A[k]){ nuevas++; } else if((v.t||0)>(A[k].t||0)){ act++; } else continue;
+  }
+  const planNew = window.mergePlan ? window.mergePlan(d.plan,false) : false;
+  const mine=new Set((Store.data.exams||[]).map(x=>x.t)); const exNew=(d.exams||[]).filter(x=>x&&x.t&&!mine.has(x.t));
+  const supNew=Object.keys(d.sup||{}).filter(k=>!(Store.data.sup||{})[k]);
+  if(!nuevas&&!act&&!planNew&&!exNew.length&&!supNew.length){ alert("No hay nada nuevo en ese archivo: tu progreso ya está al día."); return; }
+  if(!confirm("Se añadirán "+nuevas+" respuestas nuevas y se actualizarán "+act+" con un intento más reciente."+(exNew.length?"\nTambién "+exNew.length+" exámenes tipo Gandia.":"")+(supNew.length?"\nY "+supNew.length+" respuestas a supuestos prácticos.":"")+(planNew?"\nTambién se añadirá lo marcado en el calendario de estudio.":"")+"\nNo se borra nada de tu progreso actual. ¿Continuar?")) return;
+  for(const [k,v] of Object.entries(d.answers)){ if(v&&typeof v.ok==="boolean"&&(!A[k]||(v.t||0)>(A[k].t||0))) A[k]=v; }
+  if(exNew.length){ Store.data.exams=(Store.data.exams||[]).concat(exNew).sort((a,b)=>a.t-b.t); }
+  if(supNew.length){ Store.data.sup=Store.data.sup||{}; for(const k of supNew) Store.data.sup[k]=d.sup[k]; }
+  if(planNew) window.mergePlan(d.plan,true);
+  Store.save(); buildQueue(); Store.status("ok","Importado: "+(nuevas+act)+" respuestas");
+});
+
+/* ---------- pestañas móvil y tema ---------- */
+function showTab(c){ document.querySelectorAll(".col").forEach(x=>x.classList.toggle("on",x.id==="c-"+c)); document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.c===c)); }
+$("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) showTab(b.dataset.c); });
+$("#theme").addEventListener("click",()=>{ const r=document.documentElement; const dark=r.dataset.theme? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme=dark?"light":"dark"; try{localStorage.setItem("gandia-tema",r.dataset.theme);}catch(e){} });
+try{ const t=localStorage.getItem("gandia-tema"); if(t) document.documentElement.dataset.theme=t; }catch(e){}
+
+/* ---------- arranque ---------- */
+(async function(){
+  await Store.init();
+  fillLaws(); fillFilters();
+  const last=Store.data.last||{};
+  if(last.law&&artOf(last.law,last.art)){ S.law=last.law; $("#law").value=S.law; openArt(last.law,last.art); }
+  else { renderTree(); openArt("rople","22"); }
+  buildQueue();
+  if(location.hash==="#ranking") showRanking();
+  if(location.hash==="#examen") showExamIntro();
+  if(location.hash==="#supuestos") showSupuestos();
+  if(location.hash==="#novedades") showNovedades();
+  if(location.hash==="#calendario") window.showCalendar&&window.showCalendar();
+})();
+</script>
+
+<script src="data/calendario.js"></script>
+</body>
+</html>
