@@ -201,6 +201,7 @@ mark{background:#ffe066;color:#000;border-radius:2px}
   <h1>Estudio · Subalterno Gandia</h1>
   <button class="iconbtn hdr" id="bRank" title="Artículos más preguntados, con notas para memorizar">🏆 Ranking</button>
   <button class="iconbtn hdr" id="bSim" title="Preguntas nuevas redactadas por Claude sobre los 16 temas, con su porqué">🔥 Simulacro (<span id="nSim"></span>)</button>
+  <button class="iconbtn hdr" id="bCE100" title="100 preguntas literales de la Constitución, arts. 1 a 55, con trampas de examinador">📜 Test CE 1-55 (100)</button>
   <button class="iconbtn hdr" id="bReal" title="Preguntas de exámenes reales de subalterno, conserje y de la Comunitat">📝 Exámenes reales (<span id="nReal"></span>)</button>
   <button class="iconbtn hdr" id="bExam" title="Primer ejercicio como el de Gandia: 40 preguntas, 57 minutos, cada fallo resta 1/4">⏱ Examen tipo Gandia</button>
   <button class="iconbtn hdr" id="bPil" title="Píldoras de repaso: lo que llevas peor según tus respuestas">💊 Píldoras (<span id="nPil">0</span>)</button>
@@ -248,7 +249,7 @@ mark{background:#ffe066;color:#000;border-radius:2px}
     <div class="colhead">
       <h2>Preguntas de examen</h2>
       <div class="filters">
-        <select id="fbank" class="full" title="Banco de preguntas"><option value="real">Exámenes reales (todos)</option><option value="gva">Exámenes oficiales Subalternos GVA</option><option value="muni">Exámenes de conserje y subalterno de ayuntamientos</option><option value="reg">Exámenes de la Comunitat (Alcoi, Alicante, Valencia…)</option><option value="sim">Simulacro Gandia (Claude)</option><option value="all">Todos los bancos</option></select>
+        <select id="fbank" class="full" title="Banco de preguntas"><option value="real">Exámenes reales (todos)</option><option value="gva">Exámenes oficiales Subalternos GVA</option><option value="muni">Exámenes de conserje y subalterno de ayuntamientos</option><option value="reg">Exámenes de la Comunitat (Alcoi, Alicante, Valencia…)</option><option value="sim">Simulacro Gandia (Claude)</option><option value="ce100">Test CE arts. 1-55 con trampas (Claude, 100)</option><option value="all">Todos los bancos</option></select>
         <select id="ftopic" class="full" title="Ley o tema"></select>
         <select id="fexam" class="full" title="Examen"></select>
         <select id="fsrc" title="Fuente de la respuesta">
@@ -268,6 +269,7 @@ mark{background:#ffe066;color:#000;border-radius:2px}
 
 <script src="data/laws.js"></script>
 <script src="data/questions.js"></script>
+<script src="data/test_ce.js"></script>
 <script src="data/ranking.js"></script>
 <script src="data/extra.js"></script>
 <script>
@@ -488,7 +490,7 @@ function renderQ(){
   S.answered=null;
 }
 function srcHTML(q){
-  if(q.src==="claude") return `<b class="pr">Pregunta del Simulacro Gandia</b>: redactada por Claude sobre el texto vigente y el material del Ayuntamiento, con nivel de tribunal exigente.${q.prov?' <b class="du">Provisional: se revisará cuando se apruebe el III Plan de Igualdad (13/11/2026).</b>':""}<div style="margin-top:6px">${esc(q.why||"")}</div>`;
+  if(q.src==="claude") return `<b class="pr">${q.b==="ce100"?"Test CE arts. 1-55 con trampas":"Pregunta del Simulacro Gandia"}</b>: redactada por Claude sobre el texto vigente y el material del Ayuntamiento, con nivel de tribunal exigente.${q.prov?' <b class="du">Provisional: se revisará cuando se apruebe el III Plan de Igualdad (13/11/2026).</b>':""}<div style="margin-top:6px">${esc(q.why||"")}</div>`;
   if(q.src==="oficial") return `<b class="of">Respuesta oficial</b>: plantilla publicada por el tribunal. <span class="kbd">${esc(BANKNAME[q.b]||"")}</span>`;
   if(q.src==="libro") return `<b class="pr">Material del curso</b>: solución del propio libro o test (no es un examen oficial).`;
   if(q.dud) return `<b class="du">Respuesta propuesta y dudosa</b>: no había plantilla oficial y el texto del escaneo no es claro. Compruébala con la ley.`;
@@ -598,6 +600,7 @@ $("#bRank").addEventListener("click",()=>showRanking());
 $("#bRank2").addEventListener("click",()=>showRanking());
 function openBank(bk){ $("#fbank").value=bk; $("#fstat").value="pend"; $("#fart").checked=false; $("#ftopic").value="all"; $("#fexam").value="all"; $("#fsrc").value="all"; buildQueue(); showTab("q"); }
 $("#bSim").addEventListener("click",()=>openBank("sim"));
+$("#bCE100").addEventListener("click",()=>openBank("ce100"));
 $("#bReal").addEventListener("click",()=>openBank("real"));
 $("#nSim").textContent=QS.filter(q=>q.b==="sim").length;
 $("#nReal").textContent=QS.filter(q=>q.real).length;
